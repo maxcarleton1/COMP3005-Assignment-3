@@ -33,6 +33,6 @@ Since it wasn't clearly stated, I assumed the database already exists and is pop
 
 ## Assumptions and other details
 I'm using a 255 character limit for the strings as we've previously used in our SQL assignments.
-I wasn't certain how important user interaction was, so I just went for a simple terminal interface.
-For addStudent, I assumed that enrollment_date would be a string in the correct format "year-month-date", as that's how psycopg2 processes them.
-Seeing as psycopg2 requires a connection to the database to run queries, and I couldn't edit the function signatures, I opted to just make a new connection for each function.
+For addStudent, I assumed that enrollment_date would be a string in the correct format "year-month-date", as that's how psycopg2 processes them. I added error checking just in case.
+Seeing as psycopg2 requires a connection to the database to run queries, and I couldn't edit the function signatures, I opted to just use global variables.
+It's not explicitly stated, but I'm assuming our file will be run on its own, not just the individual required 4 functions.

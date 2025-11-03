@@ -2,31 +2,18 @@
 
 import psycopg2 # The library which allows connecting to PostgreSQL databases
 
-# Questions: 
-# Do we need to validate data? Example: enrollment_date
-# Do we need a UI, or just implementing the functions?
-# Do we need CHAR_LIMIT?
-# Can I alter the function signatures to pass in the connection/cursor?
-# Office hours: monday 3-4pm HP 4125
-
 CHAR_LIMIT = 255
 
-connection = psycopg2.connect(database="assignment3q1", host="localhost", user="postgres", password="password", port="5432") # For testing
+database = "assignment3q1"
+host = "localhost"
+user = "postgres"
+password = "password"
+port = "5432" # Default port
+
+connection = psycopg2.connect(database=database, host=host, user=user, password=password, port=port)
 cursor = connection.cursor()
 
 def start_application():
-    # database = input("Enter database name: ")
-    # host = input("Enter host name: ")
-    # user = input("Enter user name: ")
-    # password = input("Enter database name: ")
-    # port = "5432" # Default port
-
-    # connection = psycopg2.connect(database=database, host=host, user=user, password=password, port=port) # Connecting to PostgreSQL database
-    # cursor = connection.cursor() # Cursor to interact with the database
-
-    # cursor.execute("SELECT * FROM students") # Test
-    # print(cursor.fetchall()) # Test
-
     while(True):
         print("\n1. Get all students")
         print("2. Add a student")
@@ -53,7 +40,7 @@ def start_application():
             email = input("Enter email: ")
             email = email[:CHAR_LIMIT] if len(email) > CHAR_LIMIT else email
 
-            enrollment_date = input("Enter enrollment date in the form year-month-day: ") # Error checking needed here?
+            enrollment_date = input("Enter enrollment date in the form year-month-day (yyyy-mm-dd): ")
 
             addStudent(first_name, last_name, email, enrollment_date)
         elif option == 3:
@@ -73,6 +60,13 @@ def start_application():
 def end_application(): # Just to close the database connection properly
     cursor.close()
     connection.close()
+
+def validate_email(email):
+    parts = email.split("@")
+    if len(parts) == 2 and "." in parts[1]: # Making sure there's at least an @ and . in the second half of the email
+        return True
+    else:
+        return False
 
 def getAllStudents():
     """
@@ -107,11 +101,19 @@ def addStudent(first_name, last_name, email, enrollment_date):
         enrollment_date: String
     """
 
+    if not validate_email(email):
+        print("Incorrect email format, check again.")
+        return
+
     values = (first_name, last_name, email, enrollment_date) # New row, these get substituted into the query
 
-    cursor.execute("INSERT INTO students (first_name, last_name, email, enrollment_date) VALUES (%s, %s, %s, %s);", values) 
-    connection.commit() # Completes the transaction, sending the query to the database
-    # psycopg2 should automatically stop the transaction if there are insertion errors
+    try:
+        cursor.execute("INSERT INTO students (first_name, last_name, email, enrollment_date) VALUES (%s, %s, %s, %s);", values) 
+        connection.commit() # Completes the transaction, sending the query to the database
+    except Exception as e:
+        print(e)
+        connection.rollback() # Make sure to rollback on any errors
+    
 
 def updateStudentEmail(student_id, new_email):
     """
@@ -122,10 +124,18 @@ def updateStudentEmail(student_id, new_email):
         new_email: String
     """
 
+    if not validate_email(new_email):
+        print("Incorrect email format, check again.")
+        return
+
     values = (new_email, student_id) # These get substituted into the query
 
-    cursor.execute("UPDATE students SET email = %s WHERE student_id = %s", values) # Updates the corresponding student's email
-    connection.commit() # If there is no student_id which matches, nothing gets updated, no harm done
+    try:
+        cursor.execute("UPDATE students SET email = %s WHERE student_id = %s", values) # Updates the corresponding student's email
+        connection.commit() # If there is no student_id which matches, nothing gets updated, no harm done
+    except Exception as e:
+        print(e)
+        connection.rollback()
 
 def deleteStudent(student_id):
     """
